@@ -1,28 +1,60 @@
-import { Scene } from 'phaser';
+import { Player } from '../objects/Player';
+import { Skeleton } from '../objects/Skeleton';
+import { Fireball } from '../objects/Fireball';
 
-export class Game extends Scene
-{
-    constructor ()
-    {
+export class Game extends Phaser.Scene {
+    constructor() {
         super('Game');
     }
 
-    create ()
-    {
-        this.cameras.main.setBackgroundColor(0x00ff00);
+    create() {
+        this.player = new Player(this, 512, 384, 'character');
 
-        this.add.image(512, 384, 'background').setAlpha(0.5);
-
-        this.add.text(512, 384, 'Make something fun!\nand share it with us:\nsupport@phaser.io', {
-            fontFamily: 'Arial Black', fontSize: 38, color: '#ffffff',
-            stroke: '#000000', strokeThickness: 8,
-            align: 'center'
-        }).setOrigin(0.5);
-
-        this.input.once('pointerdown', () => {
-
-            this.scene.start('GameOver');
-
+        this.skeletons = this.physics.add.group({
+            classType: Skeleton, // Use the Skeleton class
+            runChildUpdate: true, // Automatically update children
         });
+
+        this.skeletons.get(212, 212, 'skeleton-head'); // Add a skeleton to the group
+        this.skeletons.get(800, 800, 'skeleton-head');
+
+        this.fireballs = this.physics.add.group({
+            classType: Fireball,
+            runChildUpdate: true,
+        });
+        this.physics.add.overlap(this.fireballs, this.skeletons, this.hitEnemy, null, this);
+        this.time.addEvent({
+            delay: 500,
+            callback: this.autoFire,
+            callbackScope: this,
+            loop: true,
+        })
+
+        this.keys = {
+            up: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
+            left: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
+            down: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
+            right: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
+            space: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE),
+        };
+    }
+
+    update(time) {
+        this.player.move(this.keys, time);
+        this.player.autoFire(this.skeletons, this.fireballs, time);
+
+        this.skeletons.children.iterate((skeleton) => {
+            if (skeleton.active) {
+                skeleton.chaseTarget(this.player);
+            }
+        });
+    }
+
+    hitEnemy(fireball, enemy) {
+        fireball.destroy();
+
+        if (enemy instanceof Skeleton) {
+            enemy.takeDamage(50);
+        }
     }
 }
