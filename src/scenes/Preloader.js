@@ -32,6 +32,7 @@ export class Preloader extends Scene
         this.load.image('skeleton-head', 'skeleton head.png');
         this.load.image('character', 'character.png');
         this.load.image('fireball', 'fireball.png');
+        this.load.image('dark-wizard', 'dark-wizard.png');
     }
 
     create ()

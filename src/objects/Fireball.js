@@ -7,6 +7,7 @@ export class Fireball extends Phaser.Physics.Arcade.Sprite {
         this.setSize(16, 16);
         this.setCollideWorldBounds(true);
         this.body.onWorldBounds = true;
+        this.projectileSpeed = 500;
     }
 
     fire(x, y, direction) {
@@ -16,7 +17,7 @@ export class Fireball extends Phaser.Physics.Arcade.Sprite {
             x: direction.x / magnitude,
             y: direction.y / magnitude,
         };
-        const speed = 600;
-        this.setVelocity(normalizedDirection.x * speed, normalizedDirection.y * speed);
+
+        this.setVelocity(normalizedDirection.x * this.projectileSpeed, normalizedDirection.y * this.projectileSpeed);
     }
 }
