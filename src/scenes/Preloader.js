@@ -33,13 +33,32 @@ export class Preloader extends Scene
         this.load.image('character', 'character.png');
         this.load.image('fireball', 'fireball.png');
         this.load.image('dark-wizard', 'dark-wizard.png');
+
+        // Tilemap
+        this.load.image('mountain', 'mountain_landscape.png');
+        this.load.tilemapTiledJSON('map', 'map.json');
+
+        // Player spritesheet
+        this.load.spritesheet('player', 'mage-walk-down.png', {
+            frameWidth: 64,
+            frameheight: 64,
+        });
+
+        // Infinite loading tutorial
+        this.load.image('sprGrass', 'sprGrass.png');
     }
 
     create ()
     {
-        //  When all the assets have loaded, it's often worth creating global objects here that the rest of the game can use.
-        //  For example, you can define global animations here, so we can use them in other scenes.
-        
+        //  Global objects (e.g., animations)
+
+        // Player animations
+        this.anims.create({
+            key: 'walk-right',
+            frames: this.anims.generateFrameNumbers('player', { start: 0, end: 3 }), // Frames 0 to 3
+            frameRate: 10,  // Adjust frame rate as needed
+            repeat: -1,     // Loop the animation
+        });
 
         //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
         this.scene.start('MainMenu');

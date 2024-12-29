@@ -3,11 +3,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         super(scene, x, y, texture);
         scene.add.existing(this);
         scene.physics.add.existing(this);
-        this.setScale(0.04);
-        this.setCollideWorldBounds(true);
+        this.setScale(1);
 
         this.lastDirection = { x: 1, y: 0 };
-        this.speed = 250;
+        this.speed = 125;
         this.isDashing = false;
         this.lastDashTime = 0;
 
@@ -16,14 +15,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     move(keys, currentTime) {
-        /*
-        if (keys.space.isDown) {
-            console.log("Space pressed! Attempting to dash...");
-            this.dash(currentTime);
-            return;
-        }
-        */
-
         const velocityX = (keys.right.isDown - keys.left.isDown) * this.speed;
         const velocityY = (keys.down.isDown - keys.up.isDown) * this.speed;
 
@@ -32,6 +23,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
         this.setVelocity(velocityX * normalizationFactor, velocityY * normalizationFactor);
 
+        if (velocityX !== 0 || velocityY !== 0) {
+            this.anims.play('walk-right', true); // Play walk-right animation for all directions
+            if (velocityX < 0) {
+                this.setFlipX(true); // Flip sprite for left movement
+            } else if (velocityX > 0) {
+                this.setFlipX(false); // Reset sprite flip for right movement
+            }
+        } else {
+            this.anims.stop(); // Stop animation when idle
+        }
+    
+        // Update last direction for potential other logic
         if (velocityX !== 0 || velocityY !== 0) {
             this.lastDirection = { x: velocityX, y: velocityY };
         }
