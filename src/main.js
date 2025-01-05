@@ -2,11 +2,12 @@ import { Boot } from './scenes/Boot';
 import { Game } from './scenes/Game';
 import { MainMenu } from './scenes/MainMenu';
 import { Preloader } from './scenes/Preloader';
+import RexUIPlugin from 'phaser3-rex-plugins/templates/ui/ui-plugin.js';
 
 const config = {
     type: Phaser.AUTO,
-    width: 1024,
-    height: 640,
+    width: 720,
+    height: 450,
     pixelArt: true,
     roundPixels: true,
     parent: 'game-container',
@@ -21,6 +22,11 @@ const config = {
             gravity: {y: 0},
             debug: true,
         },
+    },
+    plugins: {
+        key: 'rexUI',
+        plugin: RexUIPlugin,
+        start: true
     },
     scene: [Boot, Preloader, MainMenu, Game]
 };

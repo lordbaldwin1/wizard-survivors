@@ -1,107 +1,78 @@
 export class Player extends Phaser.Physics.Arcade.Sprite {
     constructor(scene, x, y, texture) {
         super(scene, x, y, texture);
-        scene.add.existing(this);
-        scene.physics.add.existing(this);
-        this.setScale(1);
+        this.radius = 18;
+
+        this.scene.add.existing(this);
+        this.scene.physics.add.existing(this);
+        this.body.setCircle(this.radius, 0, 0);
+        this.setImmovable(true);
 
         this.lastDirection = { x: 1, y: 0 };
         this.speed = 125;
-        this.isDashing = false;
-        this.lastDashTime = 0;
 
-        this.fireRate = 1500;
-        this.lastFireTime = 0;
+        this.worldBoxCollider = new Phaser.Geom.Rectangle(0, 0, this.scene.renderer.width, this.scene.renderer.height);
+
+        this.health = 10;
+        this.maxHealth = 10;
+
+        this.receivingDamage = false;
     }
 
-    move(keys, currentTime) {
+    update(keys) {
         const velocityX = (keys.right.isDown - keys.left.isDown) * this.speed;
         const velocityY = (keys.down.isDown - keys.up.isDown) * this.speed;
 
-        const magnitude = Math.sqrt(velocityX ** 2 + velocityY ** 2);
-        const normalizationFactor = magnitude > 0 ? this.speed / magnitude : 0;
-
-        this.setVelocity(velocityX * normalizationFactor, velocityY * normalizationFactor);
-
+        const velocityVector = new Phaser.Math.Vector2(velocityX, velocityY);
+       
+        // If 0 vector, don't normalize
         if (velocityX !== 0 || velocityY !== 0) {
-            this.anims.play('walk-right', true); // Play walk-right animation for all directions
+            velocityVector.normalize().scale(this.speed);
             if (velocityX < 0) {
-                this.setFlipX(true); // Flip sprite for left movement
+                this.setFlipX(true);
             } else if (velocityX > 0) {
-                this.setFlipX(false); // Reset sprite flip for right movement
+                this.setFlipX(false);
             }
-        } else {
-            this.anims.stop(); // Stop animation when idle
-        }
-    
-        // Update last direction for potential other logic
-        if (velocityX !== 0 || velocityY !== 0) {
             this.lastDirection = { x: velocityX, y: velocityY };
         }
+
+        this.setVelocity(velocityVector.x, velocityVector.y);
+
+        this.worldBoxCollider.x = this.x - 0.5 * this.scene.renderer.width
+        this.worldBoxCollider.y = this.y - 0.5 * this.scene.renderer.height
     }
 
-    // TODO(zach): Figure out how to make a working dash
-    /*
-    dash(currentTime) {
-        const dashCooldown = 1000;
-        const dashDuration = 200;
-        const dashSpeedMultiplier = 3;
-
-        if (this.isDashing || currentTime - this.lastDashTime < dashCooldown) {
-            return;
-        }
-
-        this.isDashing = true;
-        this.lastDashTime = currentTime;
-
-        const dashVelocityX = this.lastDirection.x * dashSpeedMultiplier;
-        const dashVelocityY = this.lastDirection.y * dashSpeedMultiplier;
-
-        this.setVelocity(dashVelocityX, dashVelocityY);
-
-        this.scene.time.delayedCall(dashDuration, () => {
-            this.isDashing = false;
-        });
-    }
-    */
-
-    autoFire(enemies, fireballs, currentTime) {
-
-        if (currentTime - this.lastFireTime < this.fireRate) {
-            return;
-        }
-        this.lastFireTime = currentTime;
-
-        const closestEnemy = this.getClosestEnemy(enemies);
-        if (!closestEnemy) {
-            return;
-        }
-
-        const direction = {
-            x: closestEnemy.x - this.x,
-            y: closestEnemy.y - this.y,
-        };
-
-        const fireball = fireballs.get(this.x, this.y, 'fireball');
-        if (fireball) {
-            fireball.fire(this.x, this.y, direction);
-        }
-    }
-
-    getClosestEnemy(enemies) {
-        let closestEnemy = null;
-        let shortestDistance = Infinity;
-
-        enemies.children.iterate((enemy) => {
-            if (enemy.active) {
-                const distance = Phaser.Math.Distance.Between(this.x, this.y, enemy.x, enemy.y);
-                if (distance < shortestDistance) {
-                    shortestDistance = distance;
-                    closestEnemy = enemy;
-                }
+    takeDamage(amount, playerUI) {
+        if (this.receivingDamage === false) {
+            if (this.health <= 0) {
+                return;
+                // TODO: Game over, switch scene
+            } else {
+                this.health -= amount;
+                playerUI.updateHealthBar();
+                this.whenDamaged();
             }
-        });
+        }
+    }
 
-        return closestEnemy;
+    whenDamaged(fill = 16711680, delay = 200) {
+        if(!this.receivingDamage) {
+            this.setTintFill(fill);
+            this.damageTimeout = this.scene.time.addEvent({
+                delay: delay,
+                loop: false,
+                callback: () => {
+                    this.restoreTint()
+                }
+            });
+            this.receivingDamage = true;
+        }
+    }
+
+    restoreTint() {
+            this.setTint(0xffffff);
+            this.receivingDamage = false;
     }
 }
+
+

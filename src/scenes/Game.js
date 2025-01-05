@@ -1,8 +1,10 @@
 import { Player } from '../objects/Player';
-import { Skeleton } from '../objects/Skeleton';
-import { Fireball } from '../objects/Fireball';
-import { DarkWizard } from '../objects/DarkWizard';
-import { Chunk } from '../objects/Entities';
+import { Priest } from '../objects/Priest';
+import { Enemy } from '../objects/Enemy';
+import { BGMan } from '../BGMan';
+import { EnemyGroup } from '../objects/EnemyGroup';
+import { PlayerUI } from '../objects/PlayerUI';
+import { EnemyPool } from '../objects/EnemyPool';
 
 export class Game extends Phaser.Scene {
     constructor() {
@@ -10,139 +12,74 @@ export class Game extends Phaser.Scene {
     }
 
     create() {
-        // Map
-        /* OG MAP
-        const map = this.make.tilemap({ key: 'map' });
-        const tileset = map.addTilesetImage('mountain', 'mountain');
-        const groundLayer = map.createLayer('Tile Layer 1', tileset, 0, 0);
-        groundLayer.setCollisionByProperty({ collides: true });
-        */
-
-        // Player creation
-        this.player = new Player(this, 512, 384, 'player');
-        this.cameras.main.startFollow(this.player);
-      
-        this.chunkSize = 16;
-        this.tileSize = 16;
-        this.chunks = [];
-
-        /* OG CAMERA
-        this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels); // Camera bounds
-        this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels); // World bounds
-        */
-
-        // Base enemies group
-        this.enemies = this.physics.add.group({
-            runChildUpdate: true, // Automatically update children
-        });
-    
-        // Add skeletons to the enemies group
-        this.skeletons = this.physics.add.group({
-            classType: Skeleton,
-            runChildUpdate: true,
-        });
-        this.enemies.add(this.skeletons.get(212, 212, 'skeleton-head'));
-        this.enemies.add(this.skeletons.get(800, 800, 'skeleton-head'));
-    
-        // Add dark wizards to the enemies group
-        this.darkwizards = this.physics.add.group({
-            classType: DarkWizard,
-            runChildUpdate: true,
-        });
-        this.enemies.add(this.darkwizards.get(800, 100, 'dark-wizard'));
-
-        // Add fireballs
-        this.fireballs = this.physics.add.group({
-            classType: Fireball,
-            runChildUpdate: true,
-        });
-        this.physics.add.overlap(this.fireballs, this.enemies, this.hitEnemy, null, this);
-        this.time.addEvent({
-            delay: 500,
-            callback: this.autoFire,
-            callbackScope: this,
-            loop: true,
-        })
-
-        // Keyboard input
         this.keys = {
             up: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
             left: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
             down: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
             right: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
         };
-    }
 
-    getChunk(x, y) {
-        var chunk = null;
-        for (var i = 0; i < this.chunks.length; i++) {
-          if (this.chunks[i].x == x && this.chunks[i].y == y) {
-            chunk = this.chunks[i];
-          }
-        }
-        return chunk;
-      }
+        this.bgManager = new BGMan(this);
+        this.bgManager.makeBackground('bgTile');
 
-    update(time) {
-        this.player.move(this.keys, time);
-        // Dynamic Chunk Loading/Unloading
-        var snappedChunkX = (this.chunkSize * this.tileSize) * Math.round(this.player.x / (this.chunkSize * this.tileSize));
-        var snappedChunkY = (this.chunkSize * this.tileSize) * Math.round(this.player.y / (this.chunkSize * this.tileSize));
-    
-        snappedChunkX = snappedChunkX / this.chunkSize / this.tileSize;
-        snappedChunkY = snappedChunkY / this.chunkSize / this.tileSize;
-    
-        for (var x = snappedChunkX - 2; x < snappedChunkX + 2; x++) {
-          for (var y = snappedChunkY - 2; y < snappedChunkY + 2; y++) {
-            var existingChunk = this.getChunk(x, y);
-    
-            if (existingChunk == null) {
-              var newChunk = new Chunk(this, x, y);
-              this.chunks.push(newChunk);
-            }
-          }
-        }
-    
-        for (var i = 0; i < this.chunks.length; i++) {
-          var chunk = this.chunks[i];
-    
-          if (Phaser.Math.Distance.Between(
-            snappedChunkX,
-            snappedChunkY,
-            chunk.x,
-            chunk.y
-          ) < 3) {
-            if (chunk !== null) {
-              chunk.load();
-            }
-          }
-          else {
-            if (chunk !== null) {
-              chunk.unload();
-            }
-          }
-        }
+        this.player = new Player(this, 0, 0, 'player', this.keys);
+        this.cameras.main.startFollow(this.player);
 
-        this.player.autoFire(this.enemies, this.fireballs, time);
+        this.playerUI = new PlayerUI(this, this.player);
+        this.playerUI.updateHealthBar();
+        
+        //this.cameras.main.setZoom(0.5);
+        this.enemies = new EnemyGroup(this, 'priest');
+        this.physics.add.collider(this.player, this.enemies, this.handlePlayerEnemyCollision.bind(this));
+        this.physics.add.collider(this.enemies, this.enemies);
 
-        this.skeletons.children.iterate((skeleton) => {
-            if (skeleton.active) {
-                skeleton.chaseTarget(this.player);
-            }
-        });
+        this.rectOuter = new Phaser.Geom.Rectangle(
+            0,
+            0,
+            this.renderer.width + 200,
+            this.renderer.height + 200
+        )
+        this.rectInner = new Phaser.Geom.Rectangle(
+            0,
+            0,
+            this.renderer.width + 100,
+            this.renderer.height + 100
+        )
 
-        this.darkwizards.children.iterate((darkwizard) => {
-            if (darkwizard.active) {
-                darkwizard.chaseTarget(this.player);
-            }
+        this.time.addEvent({
+            delay       : 1000,
+            loop        : true,
+            callback    : () => {
+                const spawnPoint = Phaser.Geom.Rectangle.RandomOutside(this.rectOuter, this.rectInner);
+                this.enemies.spawn(spawnPoint.x, spawnPoint.y); 
+            },
         });
     }
 
-    hitEnemy(fireball, enemy) {
-        fireball.destroy();
+    update(time, delta) {
+        //console.log(this.player.x, this.player.y);
+        this.bgManager.update(this.player.x, this.player.y);
+        this.player.update(this.keys);
+        //this.playerUI.updateHealthBar();
+        this.enemies.update(this.player);
+        this.updateSpawnRect(this.player.x, this.player.y);
+    }
 
-        if (enemy instanceof Skeleton || enemy instanceof DarkWizard) {
-            enemy.takeDamage(50);
-        }
+    updateSpawnRect(playerX, playerY) {
+        let outerWidth = this.renderer.width + 200;
+        let outerHeight = this.renderer.height + 200;
+        let innerWidth = this.renderer.width + 100;
+        let innerHeight = this.renderer.height + 100;
+
+        this.rectOuter.x = playerX - 0.5 * outerWidth;
+        this.rectOuter.y = playerY - 0.5 * outerHeight;
+
+        this.rectInner.x = this.rectOuter.x + 0.5 * (outerWidth - innerWidth);
+        this.rectInner.y = this.rectOuter.y + 0.5 * (outerHeight - innerHeight);
+    }
+
+    handlePlayerEnemyCollision() {
+        console.log("COLLISION");
+        this.player.takeDamage(2, this.playerUI);
     }
 }

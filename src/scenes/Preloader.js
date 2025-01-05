@@ -27,25 +27,12 @@ export class Preloader extends Scene
     {
         //  Load the assets for the game - Replace with your own assets
         this.load.setPath('assets');
-
         this.load.image('logo', 'logo.png');
-        this.load.image('skeleton-head', 'skeleton head.png');
-        this.load.image('character', 'character.png');
-        this.load.image('fireball', 'fireball.png');
-        this.load.image('dark-wizard', 'dark-wizard.png');
 
-        // Tilemap
-        this.load.image('mountain', 'mountain_landscape.png');
-        this.load.tilemapTiledJSON('map', 'map.json');
-
+        this.load.image('bgTile', 'tile.png');
         // Player spritesheet
-        this.load.spritesheet('player', 'mage-walk-down.png', {
-            frameWidth: 64,
-            frameheight: 64,
-        });
-
-        // Infinite loading tutorial
-        this.load.image('sprGrass', 'sprGrass.png');
+        this.load.image('player', 'fighter.png');
+        this.load.image('priest', 'priest.png');
     }
 
     create ()
@@ -53,12 +40,14 @@ export class Preloader extends Scene
         //  Global objects (e.g., animations)
 
         // Player animations
+        /*
         this.anims.create({
             key: 'walk-right',
             frames: this.anims.generateFrameNumbers('player', { start: 0, end: 3 }), // Frames 0 to 3
             frameRate: 10,  // Adjust frame rate as needed
             repeat: -1,     // Loop the animation
         });
+        */
 
         //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
         this.scene.start('MainMenu');
