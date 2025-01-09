@@ -1,55 +1,42 @@
-export class EnemyPool extends Phaser.GameObjects.Group {
-    constructor(scene, enemyConfigs, maxSize = 300) {
-        this.scene = scene;
-        this.enemyConfigs = enemyConfigs // enemyType?
-        this.maxSize = maxSize;
-        this.pool = [];
+import { Enemy } from '../objects/Enemy';
 
-        this.fillPool(enemyConfigs[0].key)
+export class EnemyPool extends Phaser.GameObjects.Group {
+    constructor(scene, enemyConfigs, maxSize = 5) {
+        super(scene); // Call the Phaser.GameObjects.Group constructor
+        this.scene = scene;
+        this.enemyConfigs = enemyConfigs;
+        this.maxSize = maxSize;
+
+        // Create the initial pool for the first enemy type
+        this.createPool(this.enemyConfigs[0]);
     }
 
-    fillPool(enemyKey) {
-        while (this.pool.length < this.maxSize) {
-            const enemy = this.createEnemy(enemyKey);
-            this.pool.push(enemy);
+    createPool(config) {
+        for (let i = 0; i < this.maxSize; i++) {
+            const enemy = new Enemy(this.scene, 0, 0, config.key);
+            enemy.setActive(false);
+            enemy.setVisible(false);
+            this.add(enemy); // Add the enemy to the group
         }
     }
 
-    createEnemy(key) {
-        const enemy = this.scene.physics.add.sprite(0, 0, key);
-        enemy.setActive(false);
-        enemy.setVisible(false);
-        return enemy;
-    }
-
-    getEnemy(currentGameTime) {
-        const enemyType = this.getEnemyType(currentGameTime);
-        let enemy = this.pool.find(e => !e.active && e.texture.key === enemyType.key);
+    // Get an enemy (recycles or creates a new one if necessary)
+    getEnemy(gameTime, x, y) {
+        const config = this.getEnemyType(gameTime);
+        let enemy = this.getFirstDead(false); // Get an inactive enemy
 
         if (!enemy) {
-            enemy = this.createEnemy(enemyType.key);
-            this.pool.push(enemy);
+            console.log("No enemy from getFirstDead, creating new one...");
+            return null;
         }
 
-        enemy.setActive(true);
-        enemy.setVisible(true);
-        enemy.type = enemyType;
+        // Initialize and return the enemy
+        enemy.spawn(x, y, config);
         return enemy;
     }
 
+    // Determine the type of enemy based on game time
     getEnemyType(gameTime) {
         return this.enemyConfigs.find(config => gameTime >= config.startTime) || this.enemyConfigs[0];
     }
-
-    releaseEnemy(enemy) {
-        enemy.setActive(false);
-        enemy.setVisible(false);
-        enemy.body.reset(0, 0);
-    }
 }
-
-const enemyConfigs = [
-    { key: 'priest', startTime: 0 },  // Default enemy
-    { key: 'priest', startTime: 30 }, // Spawns after 30 seconds
-    { key: 'priest', startTime: 60 }, // Spawns after 60 seconds
-];

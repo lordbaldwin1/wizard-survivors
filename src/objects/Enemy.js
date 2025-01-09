@@ -2,37 +2,37 @@ import { ENEMY_DATA } from './EnemyData';
 
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
     constructor(scene, x, y, enemyType) {
-        const enemyData = ENEMY_DATA[enemyType];
-
-        if (!enemyData) {
-            throw new Error(`Enemy type "${enemyType}" not found in ENEMY_DATA.`);
-        }
-
-        super(scene, x, y, enemyData.texture);
+        super(scene, x, y, enemyType);
         this.scene.add.existing(this);
         this.scene.physics.add.existing(this);
 
-        this.radius = 18;
+        this.radius = 12;
         this.body.setCircle(this.radius, 0, 0);
+        this.body.setEnable(false);
 
-
-        this.health = enemyData.maxHealth;
-        this.speed = enemyData.speed;
+        this.maxHealth = 10;
+        this.health = 10;
+        this.speed = 25;
 
         this.active = false;
     }
 
-    init(x, y) {
+    spawn(x, y) {
         this.setPosition(x, y);
         this.setActive(true);
         this.setVisible(true);
+        this.body.setEnable(true);
         this.health = 10;
+
+        //this.speed = config.speed;
+        //this.health = config.health;
     }
 
     takeDamage(amount) {
         this.health -= amount;
         if (this.health <= 0) {
             this.despawn();
+            //this.killAndHide();
         }
     }
 

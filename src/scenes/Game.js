@@ -1,10 +1,13 @@
 import { Player } from '../objects/Player';
-import { Priest } from '../objects/Priest';
-import { Enemy } from '../objects/Enemy';
 import { BGMan } from '../BGMan';
-import { EnemyGroup } from '../objects/EnemyGroup';
 import { PlayerUI } from '../objects/PlayerUI';
 import { EnemyPool } from '../objects/EnemyPool';
+
+const enemyConfigs = [
+    { key: 'priest', startTime: 0 },  // Default enemy
+    { key: 'priest', startTime: 30 }, // Spawns after 30 seconds
+    { key: 'priest', startTime: 60 }, // Spawns after 60 seconds
+];
 
 export class Game extends Phaser.Scene {
     constructor() {
@@ -12,6 +15,9 @@ export class Game extends Phaser.Scene {
     }
 
     create() {
+        this.timer = 0;
+        this.spawnInterval = 500;
+
         this.keys = {
             up: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
             left: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
@@ -27,11 +33,7 @@ export class Game extends Phaser.Scene {
 
         this.playerUI = new PlayerUI(this, this.player);
         this.playerUI.updateHealthBar();
-        
         //this.cameras.main.setZoom(0.5);
-        this.enemies = new EnemyGroup(this, 'priest');
-        this.physics.add.collider(this.player, this.enemies, this.handlePlayerEnemyCollision.bind(this));
-        this.physics.add.collider(this.enemies, this.enemies);
 
         this.rectOuter = new Phaser.Geom.Rectangle(
             0,
@@ -46,23 +48,33 @@ export class Game extends Phaser.Scene {
             this.renderer.height + 100
         )
 
+        this.enemyPool = new EnemyPool(this, enemyConfigs, 5);
+        this.physics.add.collider(this.player, this.enemyPool, this.handlePlayerEnemyCollision.bind(this));
+        this.physics.add.collider(this.enemyPool, this.enemyPool);
+        
         this.time.addEvent({
-            delay       : 1000,
-            loop        : true,
-            callback    : () => {
+            delay: this.spawnInterval,
+            callback: () => {
                 const spawnPoint = Phaser.Geom.Rectangle.RandomOutside(this.rectOuter, this.rectInner);
-                this.enemies.spawn(spawnPoint.x, spawnPoint.y); 
+                this.enemyPool.getEnemy(this.timer, spawnPoint.x, spawnPoint.y);
             },
+            loop: true
         });
     }
 
     update(time, delta) {
+        this.timer += delta / 1000;
+
         //console.log(this.player.x, this.player.y);
+
         this.bgManager.update(this.player.x, this.player.y);
         this.player.update(this.keys);
-        //this.playerUI.updateHealthBar();
-        this.enemies.update(this.player);
         this.updateSpawnRect(this.player.x, this.player.y);
+        this.enemyPool.children.iterate(enemy => {
+            if (enemy.active) {
+                enemy.update(this.player);
+            }
+        })
     }
 
     updateSpawnRect(playerX, playerY) {
