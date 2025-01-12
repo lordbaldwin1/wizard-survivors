@@ -28,7 +28,6 @@ export class Preloader extends Scene
         //  Load the assets for the game - Replace with your own assets
         this.load.setPath('assets');
         this.load.image('logo', 'logo.png');
-
         this.load.image('bgTile', 'tile.png');
         // Player spritesheet
         this.load.image('player', 'fighter.png');
@@ -38,16 +37,6 @@ export class Preloader extends Scene
     create ()
     {
         //  Global objects (e.g., animations)
-
-        // Player animations
-        /*
-        this.anims.create({
-            key: 'walk-right',
-            frames: this.anims.generateFrameNumbers('player', { start: 0, end: 3 }), // Frames 0 to 3
-            frameRate: 10,  // Adjust frame rate as needed
-            repeat: -1,     // Loop the animation
-        });
-        */
 
         //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
         this.scene.start('MainMenu');

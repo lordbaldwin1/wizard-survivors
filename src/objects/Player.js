@@ -11,8 +11,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.lastDirection = { x: 1, y: 0 };
         this.speed = 125;
 
-        this.worldBoxCollider = new Phaser.Geom.Rectangle(0, 0, this.scene.renderer.width, this.scene.renderer.height);
-
         this.health = 10;
         this.maxHealth = 10;
 
@@ -37,19 +35,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
 
         this.setVelocity(velocityVector.x, velocityVector.y);
-
-        this.worldBoxCollider.x = this.x - 0.5 * this.scene.renderer.width
-        this.worldBoxCollider.y = this.y - 0.5 * this.scene.renderer.height
     }
 
-    takeDamage(amount, playerUI) {
+    takeDamage(amount) {
         if (this.receivingDamage === false) {
             if (this.health <= 0) {
                 return;
                 // TODO: Game over, switch scene
             } else {
                 this.health -= amount;
-                playerUI.updateHealthBar();
                 this.whenDamaged();
             }
         }
